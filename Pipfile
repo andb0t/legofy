@@ -16,6 +16,9 @@ requests = "*"
 "bs4" = "*"
 pandas = "*"
 lxml = "*"
+sklearn = "*"
+scipy = "*"
+pillow = "*"
 
 
 [requires]

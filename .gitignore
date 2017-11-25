@@ -1,2 +1,5 @@
+# project
+*.jpg
+
 # python
 __pycache__
