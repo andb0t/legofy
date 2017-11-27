@@ -5,13 +5,12 @@ from bs4 import BeautifulSoup
 from PIL import Image, ImageFilter
 from sklearn.neighbors import NearestNeighbors
 
-
 import utils
 
 
 def load_colors():
     black_and_white = False
-    print('Getting available colors...')
+    print('Getting available colors ...')
     # download the color table website
     headers = {'User-Agent': "Mozilla/5.0"}
     req = requests.get("https://www.bricklink.com/catalogColors.asp", headers=headers)
@@ -42,6 +41,34 @@ def load_colors():
     print(current_colors)
     return current_colors
 
+
+def quantize_colors(picture):
+    current_colours = load_colors()
+
+    print('Quantize colors ...')
+    # fit the NN to the RGB values of the colours; only one neighbour is needed
+    nn = NearestNeighbors(n_neighbors=1, algorithm='brute')
+    nn.fit(current_colours[["r", "g", "b"]])
+
+    # helper function; finds the nearest colour for a given pixel
+    def legofy_pixels(pixel, neighbors, colours):
+        new_pixel = neighbors.kneighbors(pixel.reshape(1, -1), return_distance=False)[0][0]
+        return tuple(colours.iloc[new_pixel, -3:])
+
+    # Quantize!
+    picture = np.array(picture)
+    picture = np.apply_along_axis(legofy_pixels, 2, picture, nn, current_colours)
+    picture = Image.fromarray(np.uint8(pixelated), mode="RGB")
+
+    return picture
+
+
+def pixelate_picture(picture):
+    print('Pixelate image ...')
+    picture = picture.filter(ImageFilter.MedianFilter(7)).resize((2*w10, 2*h10))
+    return picture
+
+
 print('Open image')
 image = Image.open("heman.jpg")
 
@@ -52,29 +79,11 @@ h10 = int(image.size[1]/10)
 ratio = image.size[0]/image.size[1]
 # smooths the image and scales it to 20%
 
-print('Pixelate image')
-pixelated = image.filter(ImageFilter.MedianFilter(7)).resize((2*w10, 2*h10))
+# pixelate
+pixelated = pixelate_picture(image)
 
-# load colors
-current_colours = load_colors()
-
-# fit the NN to the RGB values of the colours; only one neighbour is needed
-nn = NearestNeighbors(n_neighbors=1, algorithm='brute')
-nn.fit(current_colours[["r", "g", "b"]])
-
-
-# helper function; finds the nearest colour for a given pixel
-def legofy_pixels(pixel, neighbors, colours):
-    new_pixel = neighbors.kneighbors(pixel.reshape(1, -1), return_distance=False)[0][0]
-    return tuple(colours.iloc[new_pixel, -3:])
-
-
-# Quantize!
-print('Quantize')
-pixelated = np.array(pixelated)
-pixelated = np.apply_along_axis(legofy_pixels, 2, pixelated, nn, current_colours)
-pixelated = Image.fromarray(np.uint8(pixelated), mode="RGB")
-
+# quantize colors
+pixelated = quantize_colors(pixelated)
 
 print('Scale back')
 # reduce the size of the image according to aspect ratio (32,x)
