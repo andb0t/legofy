@@ -10,6 +10,7 @@ import utils
 
 
 def load_colors():
+    black_and_white = False
     print('Getting available colors...')
     # download the color table website
     headers = {'User-Agent': "Mozilla/5.0"}
@@ -32,6 +33,9 @@ def load_colors():
                                       | current_colors["Name"].str.contains("Dark Pink")
                                       | (current_colors["Name"] == "Lavender")
                                       | current_colors["Name"].str.contains("Sand Blue"))]
+    if black_and_white:
+        current_colors = color_table[color_table["Name"].str.contains("White")
+                                     | color_table["Name"].str.contains("Black")]
 
     print('Available colors:')
     pd.set_option('display.expand_frame_repr', False)
