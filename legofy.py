@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from PIL import Image, ImageFilter
 from sklearn.neighbors import NearestNeighbors
 
-import utils
+import src.utils as utils
 
 
 def load_colors():
